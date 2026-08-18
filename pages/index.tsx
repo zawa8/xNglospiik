@@ -1,47 +1,91 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-// Explicit structural typing definitions for matrix outputs
-interface PhonemeItem {
-  char: string;
-  arpabet: string;
-}
+// ========================================================
+// 1. INDIAN LANGUAGE (HINDI / INDO-ARYAN) PHONEME DICTIONARY
+// ========================================================
+class IndianPhonemeTranslator {
+  // Mapping xi38 characters explicitly to standard Indian vocal phonemes
+  // Rule Update: 'v' maps to Hindi H (ɦ), 'w' maps to Hindi Wa (ʋ)
+  private static languageMap: Record<string, { ipa: string; description: string }> = {
+    // --- Vowels & Nasals ---
+    'x': { ipa: 'ə',  description: 'Short Schwa (अ)' },
+    'a': { ipa: 'ɑː', description: 'Long Ah (आ)' },
+    'i': { ipa: 'ɪ',  description: 'Short I (इ) / Long Ie (ई)' },
+    'u': { ipa: 'ʊ',  description: 'Short U (उ) / Long Uu (ऊ)' },
+    'e': { ipa: 'eː', description: 'Long E (ए)' },
+    'o': { ipa: 'oː', description: 'Long O (ओ)' },
+    'N': { ipa: 'ŋ',  description: 'Anusvara Nasal Dot (अं)' },
 
-class XNgloMatrixPhonemeMapper {
-  private static vowelMap: Record<string, string> = { 
-    'x':'AH', 'a':'AA', 'i':'IY', 'u':'UW', 'e':'EH', 'o':'OW', 'N':'NG' 
-  };
-  
-  private static consonantMap: Record<string, string> = {
-    'y':'Y', 'v':'W', 'w':'W', 'l':'L', 'm':'M', 'n':'N', 'r':'R', 'R':'R', 'k':'K', 'K':'K',
-    'g':'G', 'G':'G', 'c':'CH', 'C':'CH', 'z':'JH', 'Z':'JH', 't':'T', 'T':'T', 'd':'D', 'D':'D',
-    'j':'T', 'J':'T', 'q':'D', 'Q':'D', 'b':'B', 'B':'B', 's':'S', 'S':'SH', 'p':'P', 'f':'F'
+    // --- Consonants (Velars, Palatals, Retroflex, Dentals, Bilabials) ---
+    'k': { ipa: 'k',  description: 'Ka (क)' },
+    'K': { ipa: 'kʰ', description: 'Aspirated Kha (ख)' },
+    'g': { ipa: 'ɡ',  description: 'Ga (ग)' },
+    'G': { ipa: 'ɡʱ', description: 'Aspirated Gha (घ)' },
+    'c': { ipa: 'tʃ', description: 'Cha (च)' },
+    'C': { ipa: 'tʃʰ', description: 'Aspirated Chha (छ)' },
+    'z': { ipa: 'dʒ', description: 'Ja (ज)' },
+    'Z': { ipa: 'dʒʱ', description: 'Aspirated Jha (झ)' },
+    't': { ipa: 'ʈ',  description: 'Retroflex Ta (ट)' },
+    'T': { ipa: 'ʈʰ', description: 'Aspirated Tha (ठ)' },
+    'd': { ipa: 'ɖ',  description: 'Retroflex Da (ड)' },
+    'D': { ipa: 'ɖʱ', description: 'Aspirated Dha (ढ)' },
+    'j': { ipa: 't',  description: 'Dental Ta (त)' },
+    'J': { ipa: 'tʰ', description: 'Aspirated Tha (थ)' },
+    'q': { ipa: 'd',  description: 'Dental Da (द)' },
+    'Q': { ipa: 'dʱ', description: 'Aspirated Dha (ध)' },
+    'n': { ipa: 'n',  description: 'Na (न)' },
+    'p': { ipa: 'p',  description: 'Pa (प)' },
+    'f': { ipa: 'pʰ', description: 'Aspirated Pha / Fa (फ)' },
+    'b': { ipa: 'b',  description: 'Ba (ब)' },
+    'B': { ipa: 'bʱ', description: 'Aspirated Bha (भ)' },
+    'm': { ipa: 'm',  description: 'Ma (म)' },
+    
+    // --- Liquids & Sibilants ---
+    'y': { ipa: 'j',  description: 'Ya (य)' },
+    'v': { ipa: 'ɦ',  description: 'Hindi Ha (ह)' },
+    'w': { ipa: 'ʋ',  description: 'Hindi Wa (व)' },
+    'l': { ipa: 'l',  description: 'La (ल)' },
+    'r': { ipa: 'r',  description: 'Trilled Ra (र)' },
+    'R': { ipa: 'ɽ',  description: 'Retroflex Flap Ra (ड़)' },
+    's': { ipa: 's',  description: 'Sibilant Sa (स)' },
+    'S': { ipa: 'ʃ',  description: 'Shha / Sha (श/ष)' },
+    'h': { ipa: 'ɦ',  description: 'Voiced Ha Alternative (ह)' }
   };
 
-  public static mapClusterToPhonemes(cluster: string): string[] {
+  public static translateCluster(cluster: string): string[] {
     if (!cluster) return [];
-    if (this.vowelMap[cluster]) return [this.vowelMap[cluster]];
-    if (this.consonantMap[cluster]) return [this.consonantMap[cluster]];
+    if (this.languageMap[cluster]) return [cluster];
+
     if (cluster.startsWith('N') && cluster.length > 1) {
-      return ['NG', this.consonantMap[cluster.substring(1)] || 'K'];
+      const nextChar = cluster.substring(1);
+      return ['N', nextChar];
     }
-    if (cluster.length === 2) {
-      const first = cluster[0];
-      const second = cluster[1];
-      if (this.consonantMap[first] && this.vowelMap[second]) {
-        return [this.consonantMap[first], this.vowelMap[second]];
+
+    const units: string[] = [];
+    for (let char of cluster) {
+      if (this.languageMap[char]) {
+        units.push(char);
       }
     }
-    return ['AH'];
+    return units.length > 0 ? units : ['x'];
+  }
+
+  public static getDescription(char: string): string {
+    return this.languageMap[char]?.description || char;
   }
 }
 
+// ========================================================
+// 2. STRUCTURAL TEXT TOKENIZER ENGINE
+// ========================================================
 class XNgloTextTokenizer {
   public static processInputIntoClusters(text: string): string[] {
     if (!text) return [];
     const rawWords = text.toLowerCase().split(/(\s+)/);
     const resolvedClusters: string[] = [];
+
     const validVowels = ['x', 'a', 'i', 'u', 'e', 'o', 'n'];
-    const validConsonants = ['y','v','w','l','m','n','r','R','k','K','g','G','c','C','z','Z','t','T','d','D','j','J','q','Q','b','B','s','S','p','f'];
+    const validConsonants = ['y','v','w','l','m','n','r','R','k','K','g','G','c','C','z','Z','t','T','d','D','j','J','q','Q','b','B','s','S','p','f','h'];
 
     for (const segment of rawWords) {
       if (segment.trim() === "") { resolvedClusters.push(" "); continue; }
@@ -62,12 +106,43 @@ class XNgloTextTokenizer {
   }
 }
 
-class SyncedWaveSynthesizer {
-  public static playAcousticSequence(
+// ========================================================
+// 3. MASTER AUDIO CACHE & HUMAN STREAMING CONTROLLER
+// ========================================================
+class HumanVoiceEngine {
+  private static audioBufferCache: Record<string, AudioBuffer> = {};
+  private static isPrimed = false;
+
+  public static async primeCacheForAllPhonemes(ctx: AudioContext): Promise<void> {
+    if (this.isPrimed) return;
+    
+    const allPhonemes = [
+      'x','a','i','u','e','o','N','k','K','g','G','c','C','z','Z',
+      't','T','d','D','j','J','q','Q','n','p','f','b','B','m','y',
+      'v','w','l','r','R','s','S','h'
+    ];
+
+    const loadPromises = allPhonemes.map(async (ph) => {
+      try {
+        const response = await fetch(`/audio/${ph}.wav`);
+        if (!response.ok) throw new Error('File not found');
+        const arrayBuffer = await response.arrayBuffer();
+        const decodedData = await ctx.decodeAudioData(arrayBuffer);
+        this.audioBufferCache[ph] = decodedData;
+      } catch (e) {
+        console.log(`Note: Asset /audio/${ph}.wav not found. Generating synthetic Indian vocal structures.`);
+      }
+    });
+
+    await Promise.all(loadPromises);
+    this.isPrimed = true;
+  }
+
+  public static playSequence(
     ctx: AudioContext, 
-    list: string[], 
+    phonemeList: string[], 
     duration: number, 
-    start: number, 
+    startTime: number, 
     pitch: number, 
     noise: number, 
     vibDepth: number, 
@@ -76,59 +151,80 @@ class SyncedWaveSynthesizer {
     idx: number, 
     total: number
   ): number {
-    const crossfade = 0.025;
-    let timeline = start;
+    const crossfade = 0.030; 
+    let timeline = startTime;
     const progress = total > 1 ? idx / (total - 1) : 0.5;
 
-    list.forEach((phoneme) => {
-      const size = ctx.sampleRate * (duration + crossfade);
-      const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      let noiseMix = 0.0;
+    phonemeList.forEach((ph) => {
+      const src = ctx.createBufferSource();
+      const gainNode = ctx.createGain();
+      let bufferToUse = this.audioBufferCache[ph];
 
-      if (['S', 'SH', 'CH'].includes(phoneme)) noiseMix = 0.50 + (noise * 0.3);
-      if (['K', 'P', 'T'].includes(phoneme)) noiseMix = 0.25 + (noise * 0.2);
+      if (bufferToUse) {
+        src.buffer = bufferToUse;
+      } else {
+        const size = ctx.sampleRate * (duration + crossfade);
+        const synthBuffer = ctx.createBuffer(1, size, ctx.sampleRate);
+        const data = synthBuffer.getChannelData(0);
+        let noiseMix = 0.0;
 
-      for (let s = 0; s < size; s++) {
-        const t = s / ctx.sampleRate;
-        let contour = pitch;
-        if (inflection === 'question') contour += progress * 45;
-        else if (inflection === 'excited') contour += Math.sin(progress * Math.PI) * 55;
-        else contour -= progress * 10;
+        // Custom parameters to synthesize h and w behaviors distinctly
+        if (['s', 'S', 'c', 'C', 'v'].includes(ph)) noiseMix = 0.45 + (noise * 0.25);
+        if (['k', 'K', 'p', 'f', 't', 'T'].includes(ph)) noiseMix = 0.20 + (noise * 0.15);
 
-        const vibrato = Math.sin(2 * Math.PI * vibSpeed * (timeline + t)) * vibDepth;
-        let f = contour + vibrato;
-        if (['IY', 'EH'].includes(phoneme)) f += 40;
+        for (let s = 0; s < size; s++) {
+          const t = s / ctx.sampleRate;
+          let contour = pitch;
+          if (inflection === 'question') contour += progress * 40;
+          else if (inflection === 'excited') contour += Math.sin(progress * Math.PI) * 50;
+          else contour -= progress * 12;
 
-        let val = Math.sin(2 * Math.PI * f * t) + 0.4 * Math.sin(2 * Math.PI * (f * 1.9) * t);
-        if (['K', 'P', 'T'].includes(phoneme)) val *= Math.exp(-24 * t);
-        data[s] = ((val * (1.0 - noiseMix)) + ((Math.random() * 2 - 1) * noiseMix)) * 0.18;
+          const vibrato = Math.sin(2 * Math.PI * vibSpeed * (timeline + t)) * vibDepth;
+          let activeFreq = contour + vibrato;
+          
+          if (['i', 'e'].includes(ph)) activeFreq += 35;
+          if (ph === 'v') activeFreq -= 15; // Deeper breath frequency for Hindi Ha
+
+          let waveVal = Math.sin(2 * Math.PI * activeFreq * t) + 0.35 * Math.sin(2 * Math.PI * (activeFreq * 2) * t);
+          if (['k', 'K', 'p', 'f', 't', 'T'].includes(ph)) waveVal *= Math.exp(-22 * t);
+          
+          data[s] = ((waveVal * (1.0 - noiseMix)) + ((Math.random() * 2 - 1) * noiseMix)) * 0.16;
+        }
+        src.buffer = synthBuffer;
       }
 
-      const src = ctx.createBufferSource();
-      const gain = ctx.createGain();
-      src.buffer = buffer;
-      gain.gain.setValueAtTime(0, timeline);
-      gain.gain.linearRampToValueAtTime(1, timeline + crossfade);
-      gain.gain.setValueAtTime(1, timeline + duration - crossfade);
-      gain.gain.linearRampToValueAtTime(0, timeline + duration);
-      src.connect(gain); gain.connect(ctx.destination);
-      src.start(timeline); src.stop(timeline + duration);
+      gainNode.gain.setValueAtTime(0, timeline);
+      gainNode.gain.linearRampToValueAtTime(1, timeline + crossfade);
+      gainNode.gain.setValueAtTime(1, timeline + duration - crossfade);
+      gainNode.gain.linearRampToValueAtTime(0, timeline + duration);
+
+      src.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      src.start(timeline);
+      src.stop(timeline + duration);
+
       timeline += duration - crossfade;
     });
+
     return timeline;
   }
 }
 
+// ========================================================
+// 4. MAIN INTERACTIVE APPLICATION VIEWPORT COMPONENT
+// ========================================================
 export default function MatrixSpeechApp() {
   const [inputRawText, setInputRawText] = useState<string>("xaz xap kva zaoge.");
   const [brokenFormulaDisplay, setBrokenFormulaDisplay] = useState<string>("");
-  const [resolvedAcousticPhonemes, setResolvedAcousticPhonemes] = useState<string[]>([]);
+  const [resolvedIndianPhonemes, setResolvedIndianPhonemes] = useState<string[]>([]);
   const [isCurrentlyPlaying, setIsCurrentlyPlaying] = useState<boolean>(false);
-  const [speedMs, setSpeedMs] = useState<number>(160);
-  const [pitchOffset, setPitchOffset] = useState<number>(140);
+  const [cacheStatus, setCacheStatus] = useState<string>("Click 'Prime' to load .wav files");
+
+  const [speedMs, setSpeedMs] = useState<number>(170);
+  const [pitchOffset, setPitchOffset] = useState<number>(135);
   const [noiseIntensity, setNoiseIntensity] = useState<number>(0.5);
-  const [vibratoDepth, setVibratoDepth] = useState<number>(6);
+  const [vibratoDepth, setVibratoDepth] = useState<number>(5);
   const [vibratoSpeed, setVibratoSpeed] = useState<number>(5.5);
   const [inflectionType, setInflectionType] = useState<string>("steady");
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -136,61 +232,9 @@ export default function MatrixSpeechApp() {
   useEffect(() => {
     const clusters = XNgloTextTokenizer.processInputIntoClusters(inputRawText);
     setBrokenFormulaDisplay(clusters.join("+"));
+    
     let list: string[] = [];
     clusters.forEach(c => {
       if (c.trim() !== "" && !['.',',','!','?'].includes(c)) {
-        list = [...list, ...XNgloMatrixPhonemeMapper.mapClusterToPhonemes(c)];
-      }
-    });
-    setResolvedAcousticPhonemes(list);
-  }, [inputRawText]);
+        list = [...list, ...IndianPhonemeTranslator.translateCluster(c)];
 
-  const triggerSynthesis = () => {
-    if (isCurrentlyPlaying) return;
-    setIsCurrentlyPlaying(true);
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    const ctx = audioContextRef.current!;
-    const units = XNgloTextTokenizer.processInputIntoClusters(inputRawText);
-    const speechCount = units.filter(u => u !== " " && !['.',',','!','?'].includes(u)).length;
-    let clock = ctx.currentTime;
-    let idx = 0;
-
-    units.forEach((c) => {
-      if (c === " ") { clock += speedMs/1000; return; }
-      if (['.',',','!','?'].includes(c)) { clock += (speedMs/1000)*1.8; return; }
-      const phs = XNgloMatrixPhonemeMapper.mapClusterToPhonemes(c);
-      clock = SyncedWaveSynthesizer.playAcousticSequence(ctx, phs, (speedMs/1000)/Math.max(1, phs.length), clock, pitchOffset, noiseIntensity, vibratoDepth, vibratoSpeed, inflectionType, idx, speechCount);
-      idx++;
-    });
-    setTimeout(() => setIsCurrentlyPlaying(false), Math.max(0, (clock - ctx.currentTime)*1000));
-  };
-
-  return (
-    <div style={{ fontFamily: 'sans-serif', backgroundColor: '#0b0f19', color: '#e2e8f0', minHeight: '100vh', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <main style={{ backgroundColor: '#111827', padding: '1.5rem', borderRadius: '12px', width: '100%', maxWidth: '500px' }}>
-        <h2 style={{ color: '#38bdf8', marginTop: 0 }}>xNglo India TypeScript TTS</h2>
-        <textarea value={inputRawText} onChange={(e) => setInputRawText(e.target.value)} style={{ width: '95%', backgroundColor: '#030712', color: '#fff', border: '1px solid #374151', padding: '0.5rem', borderRadius: '6px', fontFamily: 'monospace', fontSize: '1.1rem' }} rows={2} />
-        
-        <div style={{ margin: '1rem 0', backgroundColor: '#030712', padding: '0.75rem', borderRadius: '6px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>BREAKDOWN EQUATION:</div>
-          <div style={{ fontFamily: 'monospace', color: '#f43f5e', fontSize: '1.2rem', fontWeight: 'bold' }}>{brokenFormulaDisplay}</div>
-        </div>
-
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>INTONATION: </label>
-          <select value={inflectionType} onChange={(e) => setInflectionType(e.target.value)} style={{ backgroundColor: '#030712', color: '#fff', border: '1px solid #374151', padding: '0.3rem', borderRadius: '4px' }}>
-            <option value="steady">STEADY</option>
-            <option value="question">QUESTION</option>
-            <option value="excited">EXCITED</option>
-          </select>
-        </div>
-
-        <button onClick={triggerSynthesis} disabled={isCurrentlyPlaying} style={{ width: '100%', padding: '0.85rem', backgroundColor: isCurrentlyPlaying ? '#334155' : '#0ea5e9', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
-          {isCurrentlyPlaying ? "Playing..." : "🔊 Speak Line"}
-        </button>
-      </main>
-    </div>
-  );
-}
