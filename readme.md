@@ -77,6 +77,12 @@ If you choose to clone or pull this repository down to a local computer environm
 
 ---
 
+
+
+### 🔗 Google Colab Extraction Workspace
+The cloud-based pipeline for downloading YouTube tracks, isolating vocal stems via Meta Demucs, and auto-slicing syllables can be accessed here:
+- [Open xNglospiik Audio Extraction Notebook in Google Colab](https://colab.research.google.com/drive/1LtthcY_ILpLac_-4r0rEbODXxXSvu0ab?authuser=2)
+
 ## 📄 License & Attributions
 
 Developed for the `xNglo India` phonetic distributed as open-source code models. Feel free to copy, tweak, modify, and optimize!
