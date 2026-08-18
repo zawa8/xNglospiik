@@ -1,5 +1,3 @@
-# index.tsx
-
 import React, { useState, useRef, useEffect } from 'react';
 interface PhonemeItem {
   char: string;
@@ -335,4 +333,4 @@ export default function MatrixSpeechApp() {
       </main>
     </div>
   );
-} 
+}
