@@ -1,4 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { hindiSentenceToXi38 } from '../lib/devanagariToXi38';
+
+// Minimal ambient types for the Web Speech API -- not in default TS lib.
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  0: { transcript: string };
+}
+interface SpeechRecognitionEventLike extends Event {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+interface SpeechRecognitionLike extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((ev: Event) => void) | null;
+}
+
 interface PhonemeItem {
   char: string;
   arpabet: string;
@@ -220,6 +242,62 @@ export default function MatrixSpeechApp() {
   const [inflectionType, setInflectionType] = useState<string>("steady");
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [micSupportError, setMicSupportError] = useState<string>("");
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const finalRawSpeechRef = useRef<string>(""); // accumulated Devanagari, never shown -- xi38 is derived from this
+
+  const getRecognitionCtor = (): (new () => SpeechRecognitionLike) | null => {
+    const w = window as unknown as Record<string, unknown>;
+    return (
+      (w.SpeechRecognition as (new () => SpeechRecognitionLike) | undefined) ||
+      (w.webkitSpeechRecognition as (new () => SpeechRecognitionLike) | undefined) ||
+      null
+    );
+  };
+
+  const startListening = useCallback(() => {
+    const Ctor = getRecognitionCtor();
+    if (!Ctor) {
+      setMicSupportError("This browser doesn't support the Web Speech API. Try Chrome on Android/desktop.");
+      return;
+    }
+    setMicSupportError("");
+    finalRawSpeechRef.current = "";
+    setInputRawText("");
+
+    const recognition = new Ctor();
+    recognition.lang = "hi-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (ev: SpeechRecognitionEventLike) => {
+      let interimChunk = "";
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const res = ev.results[i];
+        if (res.isFinal) {
+          finalRawSpeechRef.current = (finalRawSpeechRef.current + " " + res[0].transcript).trim();
+        } else {
+          interimChunk += res[0].transcript;
+        }
+      }
+      const preview = (finalRawSpeechRef.current + " " + interimChunk).trim();
+      setInputRawText(hindiSentenceToXi38(preview));
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, []);
+
+  const stopListening = useCallback(() => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }, []);
+
+
   useEffect(() => {
     const clusters = XNgloTextTokenizer.processInputIntoClusters(inputRawText);
     setBrokenFormulaDisplay(clusters.join("+"));
@@ -286,6 +364,16 @@ export default function MatrixSpeechApp() {
             ⚡ Prime Audio
           </button>
           <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{cacheStatus}</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.6rem', alignItems: 'center' }}>
+          <button
+            onClick={isListening ? stopListening : startListening}
+            style={{ backgroundColor: isListening ? '#f43f5e' : '#0ea5e9', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.9rem', cursor: 'pointer' }}
+          >
+            {isListening ? '⏹ Stop' : '🎙 Speak → xi38'}
+          </button>
+          {micSupportError && <span style={{ fontSize: '0.75rem', color: '#f43f5e' }}>{micSupportError}</span>}
         </div>
 
         <textarea value={inputRawText} onChange={(e) => setInputRawText(e.target.value)} style={{ width: '95%', backgroundColor: '#030712', color: '#fff', border: '1px solid #374151', padding: '0.6rem', borderRadius: '6px', fontFamily: 'monospace', fontSize: '1.1rem', outline: 'none' }} rows={2} />
