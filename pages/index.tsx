@@ -3,7 +3,7 @@ interface PhonemeItem {
   char: string;
   arpabet: string;
 }
-class IndianPhonemeTranslator {
+export class IndianPhonemeTranslator {
   private static languageMap: Record<string, { ipa: string; description: string }> = {
     'x': { ipa: 'ə',  description: 'Short Schwa (अ)' },
     'a': { ipa: 'ɑː', description: 'Long Ah (आ)' },
@@ -70,7 +70,7 @@ class IndianPhonemeTranslator {
     return this.languageMap[char]?.description || char;
   }
 }
-class XNgloTextTokenizer {
+export class XNgloTextTokenizer {
   public static processInputIntoClusters(text: string): string[] {
     if (!text) return [];
     const rawWords = text.toLowerCase().split(/(\s+)/);
@@ -99,7 +99,7 @@ class XNgloTextTokenizer {
 
   }
 }
-class HumanVoiceEngine {
+export class HumanVoiceEngine {
   private static audioBufferCache: Record<string, AudioBuffer> = {};
   private static isPrimed = false;
 
@@ -279,7 +279,10 @@ export default function MatrixSpeechApp() {
     <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#0b0f19', color: '#e2e8f0', minHeight: '100vh', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <main style={{ backgroundColor: '#111827', padding: '1.75rem', borderRadius: '12px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
         <h2 style={{ color: '#38bdf8', marginTop: 0, marginBottom: '0.25rem' }}>xNglo India: Indian Language TTS</h2>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 0, marginBottom: '1.5rem' }}>Updated: v = Hindi ह (H) and w = Hindi व (Wa).</p>
+        <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 0, marginBottom: '0.5rem' }}>Updated: v = Hindi ह (H) and w = Hindi व (Wa).</p>
+        <p style={{ fontSize: '0.8rem', marginTop: 0, marginBottom: '1.5rem' }}>
+          <a href="/speech-to-text" style={{ color: '#38bdf8' }}>🎙 Try Speech → xi38 Text</a>
+        </p>
         
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', alignItems: 'center', backgroundColor: '#030712', padding: '0.6rem', borderRadius: '6px' }}>
           <button onClick={handlePrimeCache} style={{ backgroundColor: '#1e293b', color: '#38bdf8', border: '1px solid #334155', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer' }}>
