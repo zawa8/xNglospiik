@@ -160,14 +160,14 @@ export default function SpeechToXi38() {
         }}
       >
         <h2 style={{ color: "#38bdf8", marginTop: 0, marginBottom: "0.25rem" }}>
-          Speech → xi38 Text
+          Speech → xi38 (direct)
         </h2>
         <p style={{ fontSize: "0.8rem", color: "#64748b", marginTop: 0, marginBottom: "1.25rem" }}>
-          Speak Hindi, get the xi38 structural transcription. Reverse of the{" "}
+          Mic straight to xi38 -- no e52, no Devanagari shown. Reverse of{" "}
           <a href="/reverse" style={{ color: "#38bdf8" }}>
             xi38 → Speech
-          </a>{" "}
-          page.
+          </a>
+          .
         </p>
 
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", alignItems: "center" }}>
@@ -184,7 +184,7 @@ export default function SpeechToXi38() {
               fontSize: "0.85rem",
             }}
           >
-            <option value="hi-IN">हिन्दी (hi-IN)</option>
+            <option value="hi-IN">Hindi (hi-IN)</option>
             <option value="en-IN">English India (en-IN)</option>
             <option value="en-US">English US (en-US)</option>
           </select>
@@ -214,24 +214,7 @@ export default function SpeechToXi38() {
 
         <div
           style={{
-            margin: "0 0 1rem 0",
-            backgroundColor: "#030712",
-            padding: "0.75rem",
-            borderRadius: "6px",
-            borderLeft: "4px solid #38bdf8",
-          }}
-        >
-          <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "bold" }}>
-            RECOGNIZED SPEECH (RAW):
-          </div>
-          <div style={{ fontFamily: "monospace", color: "#e2e8f0", fontSize: "1.05rem", marginTop: "0.2rem", minHeight: "1.4rem" }}>
-            {rawTranscript || (isListening ? "listening..." : "—")}
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginBottom: "1.5rem",
+            margin: "0 0 1.5rem 0",
             backgroundColor: "#030712",
             padding: "0.75rem",
             borderRadius: "6px",
@@ -242,7 +225,7 @@ export default function SpeechToXi38() {
             XI38 TEXT:
           </div>
           <div style={{ fontFamily: "monospace", color: "#f43f5e", fontSize: "1.2rem", fontWeight: "bold", marginTop: "0.2rem", minHeight: "1.5rem" }}>
-            {xi38Text || "—"}
+            {xi38Text || (isListening ? "listening..." : "—")}
           </div>
         </div>
 
